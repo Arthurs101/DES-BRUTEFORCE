@@ -55,7 +55,7 @@ int main(int argc, char *argv[]) {
     long found_key = -1;
 
     // Parallelize using OpenMP
-    #pragma omp parallel for shared(found_key) private(key) num_treads(12)
+    #pragma omp  num_treads(12) parallel for shared(found_key) private(key)
     for (long i = 0; i < max_key; ++i) {
         if (found_key != -1) {
             continue; // Skip further computation if key is already found
