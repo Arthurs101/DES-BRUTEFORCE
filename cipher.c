@@ -2,40 +2,40 @@
 #include <stdlib.h>
 #include <string.h>
 
-// Convierte una llave larga (long) en una secuencia de 8 bytes
+// Converts a long key into an 8-byte sequence
 void long_to_bytes(unsigned long long value, char *bytes) {
     for (int i = 0; i < 8; i++) {
-        bytes[i] = (value >> (56 - 8 * i)) & 0xFF;  // Extraer cada byte
+        bytes[i] = (value >> (56 - 8 * i)) & 0xFF;  // Extract each byte
     }
 }
 
-// Función de XOR para cifrar/descifrar el texto con la llave
+// XOR function to encrypt/decrypt text with the key
 void xor_cipher(const char *input, unsigned long long key, char *output, int len) {
     char key_bytes[8];
-    long_to_bytes(key, key_bytes);  // Convertir la llave a 8 bytes
+    long_to_bytes(key, key_bytes);  // Convert key to 8 bytes
 
     for (int i = 0; i < len; i++) {
-        output[i] = input[i] ^ key_bytes[i % 8];  // Usar el byte correspondiente de la llave
+        output[i] = input[i] ^ key_bytes[i % 8];  // Use corresponding byte of key
     }
 }
 
-// Guardar datos en un archivo
+// Save data to a file
 void save_to_file(const char *filename, const char *data, int len) {
     FILE *file = fopen(filename, "wb");
     if (file != NULL) {
         fwrite(data, sizeof(char), len, file);
         fclose(file);
-        printf("Texto cifrado guardado en '%s'\n", filename);
+        printf("Ciphertext saved in '%s'\n", filename);
     } else {
-        perror("Error al abrir el archivo");
+        perror("Error opening the file");
     }
 }
 
-// Cargar datos desde un archivo
+// Load data from a file
 char* load_from_file(const char *filename, int *len) {
     FILE *file = fopen(filename, "rb");
     if (file == NULL) {
-        perror("Error al abrir el archivo");
+        perror("Error opening the file");
         return NULL;
     }
 
@@ -45,7 +45,7 @@ char* load_from_file(const char *filename, int *len) {
 
     char *data = (char *)malloc(*len);
     if (data == NULL) {
-        perror("Error al alocar memoria");
+        perror("Error allocating memory");
         fclose(file);
         return NULL;
     }
@@ -56,51 +56,35 @@ char* load_from_file(const char *filename, int *len) {
 }
 
 int main() {
-    // Texto a cifrar
-    const char *plaintext = "Hola mi nombre es Jose Andres";
-    unsigned long long key = 13245;  // Llave de ejemplo
+    // Prompt user for plaintext and key
+    char plaintext[256]; // Buffer for plaintext
+    unsigned long long key;
 
-    // Longitud del texto plano
+    printf("Enter the plaintext to encrypt: ");
+    fgets(plaintext, sizeof(plaintext), stdin);
+    plaintext[strcspn(plaintext, "\n")] = '\0'; // Remove trailing newline
+
+    printf("Enter the encryption key (as a number): ");
+    scanf("%llu", &key); // Read the key
+
+    // Length of the plaintext
     int len = strlen(plaintext);
 
-    // Alocar memoria para el texto cifrado
+    // Allocate memory for the ciphertext
     char *ciphertext = (char *)malloc(len);
     if (ciphertext == NULL) {
-        perror("Error al alocar memoria para ciphertext");
+        perror("Error allocating memory for ciphertext");
         return 1;
     }
-    xor_cipher(plaintext, key, ciphertext, len);  // Cifrar el texto
+    
+    // Encrypt the text
+    xor_cipher(plaintext, key, ciphertext, len);  
 
-    // Guardar el texto cifrado en un archivo
+    // Save the ciphertext to a file
     save_to_file("cipherC.bin", ciphertext, len);
 
-    // Cargar el texto cifrado para descifrarlo
-    int loaded_len;
-    char *loaded_ciphertext = load_from_file("cipherC.bin", &loaded_len);
-    if (loaded_ciphertext == NULL) {
-        free(ciphertext);
-        return 1;  // Salir si no se pudo cargar el archivo
-    }
-
-    // Alocar memoria para el texto descifrado
-    char *decrypted_text = (char *)malloc(loaded_len + 1); // +1 para el terminador nulo
-    if (decrypted_text == NULL) {
-        perror("Error al alocar memoria para decrypted_text");
-        free(ciphertext);
-        free(loaded_ciphertext);
-        return 1;
-    }
-
-    xor_cipher(loaded_ciphertext, key, decrypted_text, loaded_len);  // Descifrar con la misma llave
-    decrypted_text[loaded_len] = '\0';  // Asegurarse de que el texto descifrado sea una cadena válida
-
-    // Imprimir el texto descifrado
-    printf("Texto descifrado: %s\n", decrypted_text);
-
-    // Liberar memoria
+    // Clean up memory
     free(ciphertext);
-    free(loaded_ciphertext);
-    free(decrypted_text);
 
-    return 0;
+    return 0;  // Successful exit
 }
