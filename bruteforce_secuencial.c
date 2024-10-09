@@ -50,15 +50,16 @@ int main(int argc, char *argv[]) {
     char *plaintext = (char *)malloc(len + 1);
 
     // Fuerza bruta para encontrar la clave correcta
-    unsigned long long max_key = 18014398509481984L;  // Llave máxima para las pruebas
     clock_t start_time = clock();
+    unsigned long long key_candidate = 0;  // Inicializa la clave candidata
 
-    for (unsigned long long i = 0; i <= max_key; i++) {
-        if (try_key(i, ciphertext, plaintext, len, search_term)) {
-            printf("Clave encontrada: %llu\n", i);
+    while (1) {  // Bucle infinito para probar todas las claves
+        if (try_key(key_candidate, ciphertext, plaintext, len, search_term)) {
+            printf("Clave encontrada: %llu\n", key_candidate);
             printf("Mensaje descifrado: %s\n", plaintext);
             break;  // Salir al encontrar la clave
         }
+        key_candidate++;  // Incrementar la clave candidata
     }
 
     clock_t end_time = clock();
@@ -67,5 +68,5 @@ int main(int argc, char *argv[]) {
 
     free(ciphertext);
     free(plaintext);
-    return 0;
+    return 0;  // Salida exitosa
 }

@@ -51,9 +51,6 @@ int main(int argc, char *argv[]) {
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
     MPI_Comm_size(MPI_COMM_WORLD, &size);
 
-    // Synchronize all processes
-    // MPI_Barrier(MPI_COMM_WORLD);
-
     if (argc != 3) {
         if (rank == 0) {
             printf("Usage: %s <cipher file> <search term>\n", argv[0]);
@@ -62,10 +59,6 @@ int main(int argc, char *argv[]) {
         return 1;  // Exit if the arguments are not correct
     }
 
-    if (rank == 0) {
-        printf("size to use: %d \n", size);
-    }
-    
     // Load the ciphertext
     int loaded_len;
     char *loaded_ciphertext = load_from_file(argv[1], &loaded_len);
@@ -80,21 +73,27 @@ int main(int argc, char *argv[]) {
     long start_key = rank * keys_per_process;
     long end_key = (rank + 1) * keys_per_process;
     char *decrypted_text = (char *)malloc(loaded_len + 1); // +1 for null terminator
-    
 
     unsigned long long found_key = 0;
-    int key_found_flag,queue_message = 0;
-    double start_time = MPI_Wtime();  // Start timing
+    int key_found_flag, queue_message = 0;
+    double start_time = 0;  // Variable para medir el tiempo de búsqueda
+    double found_time = 0;  // Variable para almacenar el tiempo encontrado
     // Brute-force key search
     for (unsigned long long key = start_key; key < end_key; key++) {
         // Check if a key was found previously
         MPI_Iprobe(MPI_ANY_SOURCE, MPI_ANY_TAG, MPI_COMM_WORLD, &queue_message, MPI_STATUS_IGNORE);
-        if(queue_message){
+        if (queue_message) {
             MPI_Recv(&key_found_flag, 1, MPI_INT, MPI_ANY_SOURCE, MPI_ANY_TAG, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
             if (key_found_flag) {
                 break; // Exit if key was found by another process
             }
         }
+        
+        // Start measuring time when trying a key
+        if (found_key == 0) {
+            start_time = MPI_Wtime();  // Start timing only when the first key is checked
+        }
+
         xor_cipher(loaded_ciphertext, key, decrypted_text, loaded_len);
         decrypted_text[loaded_len] = '\0'; // Ensure null termination
 
@@ -106,12 +105,10 @@ int main(int argc, char *argv[]) {
             for (int j = 0; j < size; ++j) {
                 MPI_Send(&key_found_flag, 1, MPI_INT, j, 0, MPI_COMM_WORLD); // Inform all processes
             }
+            found_time = MPI_Wtime() - start_time; // Measure time taken to find the key
             break; // Exit the loop after finding the key
         }
     }
-    // Broadcast the found key to all processes
-    double end_time = MPI_Wtime();  // End timing
-    double elapsed_time = end_time - start_time;
 
     // Only the root process prints the final results
     if (found_key != 0) { // Check if any process found a key
@@ -119,9 +116,8 @@ int main(int argc, char *argv[]) {
         decrypted_text[loaded_len] = '\0'; // Ensure null termination
         printf("Found the key: %llu\n", found_key);
         printf("Decrypted text: %s\n", decrypted_text);
-        printf("Total elapsed time: %.6f seconds\n", elapsed_time);
+        printf("Time to find the key: %.6f seconds\n", found_time);
     } 
-    
 
     free(loaded_ciphertext);
     free(decrypted_text);
