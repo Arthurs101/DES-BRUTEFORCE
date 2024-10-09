@@ -55,19 +55,18 @@ char* load_from_file(const char *filename, int *len) {
     return data;
 }
 
-int main() {
-    // Prompt user for plaintext and key
-    char plaintext[256]; // Buffer for plaintext
-    unsigned long long key;
-
-    printf("Enter the plaintext to encrypt: ");
-    fgets(plaintext, sizeof(plaintext), stdin);
-    plaintext[strcspn(plaintext, "\n")] = '\0'; // Remove trailing newline
-
-    printf("Enter the encryption key (as a number): ");
-    scanf("%llu", &key); // Read the key
-
-    // Length of the plaintext
+int main(int argc, char *argv[]) {
+    if (argc != 3) {
+        printf("Usage: %s <plaintext> <key>\n", argv[0]);
+        return 1;
+    }
+    // Texto a cifrar
+    const char *plaintext = argv[1];
+    printf("text %s \n",plaintext);
+    // Convertir la llave de cadena a unsigned long long
+    unsigned long long key = strtoull(argv[2], NULL, 10);
+     printf("key  %lld \n",key);
+    // Longitud del texto plano
     int len = strlen(plaintext);
 
     // Allocate memory for the ciphertext
@@ -88,3 +87,4 @@ int main() {
 
     return 0;  // Successful exit
 }
+
