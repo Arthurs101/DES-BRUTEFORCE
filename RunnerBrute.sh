@@ -6,10 +6,10 @@ read sterm
 mkdir -p build
 if [[ "$input" == "2" || "$input" == "3" ]];
 then
-    echo "ejecutando paralelo a 2 procesos"
+    echo "ejecutando paralelo a 4 procesos"
     mpicc -o ./build/bruteforce_mpi bruteforce_mpi.c
     cd build
-    mpirun -np 2 ./bruteforce_mpi cipherC.bin  "$sterm"
+    mpirun -np 4 ./bruteforce_mpi cipherC.bin  "$sterm"
     cd ..
 fi
 
